@@ -3,17 +3,17 @@ import { handleValidationErrors } from "../../middlewares/error.js";
 import ApiError from "../../utils/apiError.js";
 
 export const userValidator = [
-  body("firstName")
-    .exists()
-    .withMessage("firstName is required")
-    .isString()
-    .withMessage("firstName must be a string"),
+  // body("firstName")
+  //   .exists()
+  //   .withMessage("firstName is required")
+  //   .isString()
+  //   .withMessage("firstName must be a string"),
 
-  body("lastName")
-    .exists()
-    .withMessage("lastName is required")
-    .isString()
-    .withMessage("lastName must be a string"),
+  // body("lastName")
+  //   .exists()
+  //   .withMessage("lastName is required")
+  //   .isString()
+  //   .withMessage("lastName must be a string"),
 
   body("email")
     .exists()

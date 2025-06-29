@@ -38,15 +38,15 @@ export async function register(userData = {}) {
     {
       email: user.email,
       userId: user._id,
-      roles: user.roles,
+      // roles: user.roles,
     },
     "1h"
   );
 
   try {
     const emailInfo = await emailService.sendOTPEmail(
-      user.email,
-      user.firstName
+      user.email
+      // user.firstName
     );
 
     return ApiSuccess.created(
@@ -66,14 +66,14 @@ export async function login(userData = {}) {
   const user = await findUserByEmail(email);
   await validatePassword(password, user.password);
 
-  if (!user.isEmailVerified) {
-    throw ApiError.forbidden("Email Not Verified");
-  }
+  // if (!user.isEmailVerified) {
+  //   throw ApiError.forbidden("Email Not Verified");
+  // }
 
   const token = generateToken({
     userId: user._id,
     user: user._id,
-    roles: user.roles,
+    // roles: user.roles,
   });
 
   user.password = undefined;
