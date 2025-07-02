@@ -31,5 +31,4 @@ function validateMongoId(id) {
   }
 }
 
-
 export { hashPassword, validatePassword, validateMongoId };

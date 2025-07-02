@@ -12,10 +12,10 @@ const expenseSchema = new mongoose.Schema(
       required: [true, "Amount is required"],
       min: [0, "Amount cannot be negative"],
     },
-    date: {
-      type: Date,
-      default: Date.now,
-    },
+    // date: {
+    //   type: Date,
+    //   default: Date.now,
+    // },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

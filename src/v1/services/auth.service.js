@@ -12,6 +12,7 @@ export async function findUserByEmail(email) {
   if (!user) {
     throw ApiError.notFound("No user with this email");
   }
+
   return user;
 }
 
@@ -64,6 +65,7 @@ export async function register(userData = {}) {
 export async function login(userData = {}) {
   const { email, password } = userData;
   const user = await findUserByEmail(email);
+
   await validatePassword(password, user.password);
 
   // if (!user.isEmailVerified) {
