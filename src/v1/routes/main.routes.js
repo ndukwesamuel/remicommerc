@@ -56,13 +56,6 @@ router.post("/income", isAuth, async (req, res) => {
   }
 });
 
-// import express from "express";
-// import Expense from "./expenseModel"; // Adjust the path as needed
-// import mongoose from "mongoose";
-
-// const router = express.Router();
-
-// Create a new expense
 router.post("/exp", isAuth, async (req, res) => {
   try {
     const { category, amount } = req.body;
@@ -109,59 +102,8 @@ router.get("/exp", isAuth, async (req, res) => {
   }
 });
 
-// Get a specific expense by ID
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid expense ID" });
-    }
-
-    const expense = await Expense.findById(id);
-
-    if (!expense) {
-      return res.status(404).json({ message: "Expense not found" });
-    }
-
-    res.json(expense);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Update an expense
-router.put("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { category, amount, date } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid expense ID" });
-    }
-
-    const updateData = {};
-    if (category) updateData.category = category;
-    if (amount) updateData.amount = amount;
-    if (date) updateData.date = date;
-
-    const updatedExpense = await Expense.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updatedExpense) {
-      return res.status(404).json({ message: "Expense not found" });
-    }
-
-    res.json(updatedExpense);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
 // Delete an expense
-router.delete("/:id", async (req, res) => {
+router.delete("/exp/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -169,13 +111,33 @@ router.delete("/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid expense ID" });
     }
 
-    const deletedExpense = await Expense.findByIdAndDelete(id);
+    const deletedExpense = await expenseModel.findByIdAndDelete(id);
 
     if (!deletedExpense) {
       return res.status(404).json({ message: "Expense not found" });
     }
 
-    res.json({ message: "Expense deleted successfully" });
+    res.json({ message: "Expense deleted successfully", id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete("/income/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid expense ID" });
+    }
+
+    const deletedExpense = await IncomeModel.findByIdAndDelete(id);
+
+    if (!deletedExpense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    res.json({ message: "Income deleted successfully", id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
