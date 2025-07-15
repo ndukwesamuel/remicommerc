@@ -18,8 +18,72 @@ import mongoose from "mongoose";
 import userModel from "../models/user.model.js";
 import IncomeModel from "../models/Income.model.js";
 import expenseModel from "../models/expense.model.js";
+import IncomeGoalModel from "../models/goals.model.js";
 
 const router = express.Router();
+
+router.get("/goal", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId.userId;
+
+    // const goal = await IncomeGoalModel.findById(req.params.id);
+
+    // 1. Get all goals for the user
+    const goals = await IncomeGoalModel.find({ userId });
+
+    // 2. Get all income entries for the user
+    const incomes = await IncomeModel.find({ userId });
+
+    // 3. Calculate progress for each goal
+    const goalsWithProgress = await Promise.all(
+      goals.map(async (goal) => {
+        // Calculate total income amount (saved amount)
+        const totalSaved = incomes.reduce((sum, income) => {
+          // You might want to add additional filtering here, like:
+          // - Only include incomes after goal start date
+          // - Only include incomes before goal end date
+          return sum + income.amount;
+        }, 0);
+
+        // Calculate progress percentage (capped at 100%)
+        const progressPercentage = Math.min(
+          100,
+          (totalSaved / goal.targetAmount) * 100
+        );
+
+        // Calculate amount remaining
+        const amountRemaining = Math.max(0, goal.targetAmount - totalSaved);
+
+        // Calculate days remaining
+        const daysRemaining = Math.ceil(
+          (goal.endDate - new Date()) / (1000 * 60 * 60 * 24)
+        );
+
+        return {
+          _id: goal._id,
+          title: goal.title,
+          targetAmount: goal.targetAmount,
+          amountSaved: totalSaved,
+          amountRemaining: amountRemaining,
+          progressPercentage: progressPercentage.toFixed(2), // Keep 2 decimal places
+          daysRemaining: daysRemaining > 0 ? daysRemaining : 0,
+          isCompleted: totalSaved >= goal.targetAmount,
+          startDate: goal.startDate,
+          endDate: goal.endDate,
+          createdAt: goal.createdAt,
+          updatedAt: goal.updatedAt,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: goalsWithProgress,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 router.get("/income", isAuth, async (req, res) => {
   try {
@@ -36,6 +100,29 @@ router.get("/income", isAuth, async (req, res) => {
       message: "Error creating default categories",
       error: error.message,
     });
+  }
+});
+
+router.post("/goal", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId.userId;
+    const { title, targetAmount, endDate, startDate } = req.body;
+
+    const newGoal = new IncomeGoalModel({
+      title,
+      targetAmount,
+      endDate,
+      userId,
+      startDate,
+    });
+
+    await newGoal.save();
+    res.status(201).json({
+      success: true,
+      data: newGoal,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -58,7 +145,7 @@ router.post("/income", isAuth, async (req, res) => {
 
 router.post("/exp", isAuth, async (req, res) => {
   try {
-    const { category, amount } = req.body;
+    const { category, amount, date } = req.body;
 
     const userId = req.user.userId.userId;
 
@@ -72,13 +159,32 @@ router.post("/exp", isAuth, async (req, res) => {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const expense = new expenseModel({
+    // const expense = new expenseModel({
+    //   category,
+    //   amount,
+    //   // date: date || Date.now(),
+    //   userId,
+    // });
+
+    const expenseData = {
       category,
       amount,
-      // date: date || Date.now(),
       userId,
-    });
+    };
 
+    // If 'date' is provided in req.body, use it. Otherwise, Mongoose default will kick in.
+    if (date) {
+      // It's good practice to try and parse the date if it's coming from the body
+      // to ensure it's a valid date format before saving.
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        return res
+          .status(400)
+          .json({ message: "Invalid date format provided." });
+      }
+      expenseData.date = parsedDate;
+    }
+    const expense = new expenseModel(expenseData);
     const savedExpense = await expense.save();
     res.status(201).json(savedExpense);
   } catch (error) {
@@ -138,6 +244,38 @@ router.delete("/income/:id", async (req, res) => {
     }
 
     res.json({ message: "Income deleted successfully", id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete("/goal/:id", isAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid goal ID",
+      });
+    }
+
+    const deletedGoal = await IncomeGoalModel.findOneAndDelete({
+      _id: id,
+      userId,
+    });
+
+    if (!deletedGoal) {
+      return res.status(404).json({
+        success: false,
+        message: "Goal not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Goal deleted successfully",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
