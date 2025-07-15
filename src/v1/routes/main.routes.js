@@ -132,6 +132,7 @@ router.post("/income", isAuth, async (req, res) => {
   const income = new IncomeModel({
     source: req.body.source,
     amount: req.body.amount,
+    date: req.body.incomeData,
     userId: userId, // In real app, get from auth
   });
 
